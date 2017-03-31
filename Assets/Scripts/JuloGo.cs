@@ -10,6 +10,7 @@ namespace JuloGo {
 		void passTurn();
 		bool playAt(BoardPosition pos);
 		
+		IEnumerator<BoardPosition> GetEnumerator();
 		BoardPosition getPosition(int row, int col);
 		BoardValue getCellValue(BoardPosition pos);
 		
@@ -20,9 +21,6 @@ namespace JuloGo {
 		void advance(int num);
 		
 		GoMove currentMove();
-		
-		//Dictionary<BoardValue, int> calculateArea();
-		Dictionary<BoardValue, TeamScore> getTeamScores();
 	}
 	
 	public interface GoGameListener {
@@ -39,40 +37,6 @@ namespace JuloGo {
 			passes = 0;
 		}
 	}
-	
-	public class TeamScore {
-		public int stones;
-		public int territory;
-		
-		public TeamScore() {
-			stones = 0;
-			territory = 0;
-		}
-		
-		public int getArea() {
-			return stones + territory;
-		}
-	}
-	public class Result {
-		public int blackPoints;
-		public int whitePoints;
-		
-		public Result(int blackPoints, int whitePoints) {
-			this.blackPoints = blackPoints;
-			this.whitePoints = whitePoints;
-		}
-		public override string ToString() {
-			return blackPoints + " vs " + whitePoints + " (black " + withSign(blackPoints - whitePoints) + ")";
-		}
-		
-		static string withSign(int num) {
-			if(num <= 0) {
-				return num.ToString();
-			} else {
-				return "+" + num.ToString();
-			}
-		}
-	};
 	
 	public class GoMove {
 		public BoardValue turn;

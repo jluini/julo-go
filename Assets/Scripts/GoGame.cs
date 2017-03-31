@@ -20,7 +20,6 @@ namespace JuloGo {
 	}
 	
 	public class GoGameImpl : GoGame, GoGameListener {
-		Dictionary<BoardValue, TeamScore> teamScores;
 		Dictionary<BoardValue, TeamData> teamData;
 		
 		int numRows;
@@ -40,10 +39,6 @@ namespace JuloGo {
 			
 			listeners = new List<GoGameListener>();
 			
-			teamScores = new Dictionary<BoardValue, TeamScore>();
-			teamScores[BoardValue.Black] = new TeamScore();
-			teamScores[BoardValue.White] = new TeamScore();
-						
 			teamData = new Dictionary<BoardValue, TeamData>();
 			teamData[BoardValue.Black] = new TeamData();
 			teamData[BoardValue.White] = new TeamData();
@@ -130,6 +125,22 @@ namespace JuloGo {
 			}
 		}
 		
+		public IEnumerator<BoardPosition> GetEnumerator() {
+			int r = 0, c = 0;
+			bool done = false;
+			while(!done) {
+				yield return getPosition(r, c);
+				c++;
+				if(c >= numCols) {
+					r++;
+					c = 0;
+					if(r >= numRows) {
+						done = true;
+					}
+				}
+			}
+		}
+		
 		public BoardValue getCellValue(BoardPosition pos) {
 			return getCell(pos).value;
 		}
@@ -213,128 +224,9 @@ namespace JuloGo {
 			}
 		}
 		
-		class BoardGroup {
-			public BoardValue color;
-			public BoardPosition currentPosition;
-			public int size;
-			public HashSet<BoardValue> adjacentColors;
-			
-			public BoardGroup(BoardValue color, BoardPosition position) {
-				this.color = color;
-				this.currentPosition = position;
-				this.size = 1;
-				this.adjacentColors = new HashSet<BoardValue>();
-			}
-			
-			public void addPosition(BoardPosition pos) {
-				currentPosition = pos;
-				size++;
-			}
-			
-			public void addAdjacentColor(BoardValue adjColor) {
-				Assert.AreNotEqual(adjColor, color);
-				adjacentColors.Add(adjColor);
-			}
-			
-			public bool isAdjacentTo(BoardValue adjColor) {
-				Assert.AreNotEqual(adjColor, color);
-				return adjacentColors.Contains(adjColor);
-			}
-			public override string ToString() {
-				return color + " (" + size + ") at " + currentPosition;
-			}
-		}
-		
-		public Dictionary<BoardValue, TeamScore> getTeamScores() {
-			return teamScores;
-		}
-		
-		void calculateScores() {
-			teamScores[BoardValue.Black].stones    = 0;
-			teamScores[BoardValue.Black].territory = 0;
-			teamScores[BoardValue.White].stones    = 0;
-			teamScores[BoardValue.White].territory = 0;
-			
-			Dictionary<BoardPosition, BoardGroup> positionToGroup = new Dictionary<BoardPosition, BoardGroup>();
-			
-			int r = 0, c = 0;
-			
-			while(true) {
-				BoardPosition pos = getPosition(r, c);
-				Assert.IsNotNull(pos);
-				if(positionToGroup.ContainsKey(pos)) {
-					// next
-					c++;
-					if(c >= numCols) {
-						r++;
-						c = 0;
-						if(r >= numRows) {
-							break;
-						}
-					}
-				} else {
-					BoardCell cell = getCell(pos);
-					BoardGroup group = new BoardGroup(cell.value, pos);
-					
-					positionToGroup[pos] = group;
-					
-					expand(group, positionToGroup);
-					
-					if(group.color == BoardValue.Empty) {
-						bool toBlack = group.isAdjacentTo(BoardValue.Black);
-						bool toWhite = group.isAdjacentTo(BoardValue.White);
-						if(toBlack && !toWhite) {
-							teamScores[BoardValue.Black].territory += group.size;
-						} else if(toWhite && !toBlack) {
-							teamScores[BoardValue.White].territory += group.size;
-						}
-					} else {
-						teamScores[group.color].stones += group.size;
-					}
-				}
-			}
-		}
 		
 		void updateData() {
-			calculateScores();
 			setData(turn, currentMoveNumber + 1, moves.Count, teamData[BoardValue.Black], teamData[BoardValue.White]);
-		}
-		
-		List<BoardPosition> neighbors(BoardPosition pos) {
-			List<BoardPosition> ret = new List<BoardPosition>();
-			BoardPosition p;
-			p = getPosition(pos.row - 1, pos.col    );
-			if(p != null)
-				ret.Add(p);
-			p = getPosition(pos.row + 1, pos.col    );
-			if(p != null)
-				ret.Add(p);
-			p = getPosition(pos.row    , pos.col - 1);
-			if(p != null)
-				ret.Add(p);
-			p = getPosition(pos.row    , pos.col + 1);
-			if(p != null)
-				ret.Add(p);
-			
-			return ret;
-		}
-		
-		void expand(BoardGroup group, Dictionary<BoardPosition, BoardGroup> positionToGroup) {
-			List<BoardPosition> ns = neighbors(group.currentPosition);
-			
-			foreach(BoardPosition n in ns) {
-				BoardCell neighborCell = getCell(n);
-				BoardValue val = neighborCell.value;
-				if(val == group.color) {
-					if(!positionToGroup.ContainsKey(n)) {
-						group.addPosition(n);
-						positionToGroup[n] = group;
-						expand(group, positionToGroup);
-					}
-				} else {
-					group.addAdjacentColor(val);
-				}
-			}
 		}
 		
 		BoardCell getCell(BoardPosition pos) {
