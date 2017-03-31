@@ -39,7 +39,8 @@ namespace JuloGo {
 		
 		GoGame game;
 		
-		void Start() {
+		
+		public void init(GoGame game) {
 			caption = JuloFind.byName<Text>("Caption");
 			numMovesText    = JuloFind.byName<Text>("NumMoves");
 			blackPointsText = JuloFind.byName<Text>("BlackPoints");
@@ -49,9 +50,7 @@ namespace JuloGo {
 			whiteAreaText = JuloFind.byName<Text>("WhiteArea");
 			
 			markedStones = new List<StoneRenderer>();
-		}
-		
-		public void init(GoGame game) {
+			
 			this.game = game;
 			initBoard();
 		}
